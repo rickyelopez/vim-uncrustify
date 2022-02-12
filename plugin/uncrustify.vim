@@ -84,11 +84,11 @@ function! s:UncrustifyPreserve(command)
 endfunction
 
 
-" Function: Uncrustify() {{{2
+" Function: UncrustifyFunc() {{{2
 "
 " Execute uncrustify for current buffer
 "
-function! Uncrustify()
+function! UncrustifyFunc(options) range
   " Try to get buffer local variables, use global variables as default
   let l:uncrustify_command          = getbufvar(bufnr("%"), "uncrustify_command",          g:uncrustify_command)
   let l:uncrustify_config_file      = getbufvar(bufnr("%"), "uncrustify_config_file",      g:uncrustify_config_file)
@@ -100,12 +100,16 @@ function! Uncrustify()
   call s:UncrustifyDebug(2, "executable: ".l:uncrustify_command)
   call s:UncrustifyDebug(2, "configuration: ".l:uncrustify_config_file_path)
   call s:UncrustifyDebug(2, "mapping: ".string(l:uncrustify_language_mapping))
+  call s:UncrustifyDebug(1, "first line: ".string(a:firstline))
+  call s:UncrustifyDebug(1, "last line: ".string(a:lastline))
 
   if executable(l:uncrustify_command)
     if filereadable(l:uncrustify_config_file_path)
       if has_key(l:uncrustify_language_mapping, &filetype)
         let l:command =
-              \   ':silent! %!' . l:uncrustify_command
+              \   ':silent! ' . a:firstline . ',' . a:lastline
+              \ . '!' . l:uncrustify_command
+              \ . ' ' . a:options
               \ . ' -q '
               \ . ' -l ' . l:uncrustify_language_mapping[&filetype]
               \ . ' -c ' . l:uncrustify_config_file_path
@@ -144,6 +148,7 @@ endfunction
 
 
 " Section: Commands {{{1
-command! Uncrustify :call Uncrustify()
+command! Uncrustify :0,$call UncrustifyFunc('')
+command! -range=% UncrustifyRange :<line1>,<line2>call UncrustifyFunc('--frag')
 
 " vim600: foldmethod=marker foldlevel=0 :
